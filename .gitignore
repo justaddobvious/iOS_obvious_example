@@ -1,0 +1,10 @@
+
+## Pods
+App/Pods/
+App/Podfile.lock
+
+## Ignore macOS Finder user-related files
+.DS_Store
+
+## User settings
+xcuserdata/

@@ -1,0 +1,21 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '11.0'
+
+workspace 'ExampleObviousApp'
+
+target 'ExampleObviousApp' do
+  use_frameworks!
+
+  # Pods for ObviousDemoAPI
+  pod 'ObviousAPI'
+  pod 'Alamofire', '~> 4.7.3'
+  pod 'Stripe'
+
+  project 'ExampleObviousApp/ExampleObviousApp.xcodeproj'
+
+  target 'ExampleObviousAppTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+ 
+end
