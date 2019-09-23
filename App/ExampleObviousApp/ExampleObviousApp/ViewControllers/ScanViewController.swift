@@ -69,7 +69,7 @@ extension ScanViewController: BluetoothInteractorDelegate {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let newVC = storyboard.instantiateViewController(withIdentifier: "DeviceViewController") as! DeviceViewController
         newVC.currentDevice = device
-        newVC.currentDevice?.delegate = newVC
+        newVC.currentDevice?.setListeners(newVC, newVC, newVC, newVC)
         self.navigationController?.pushViewController(newVC, animated: true)
     }
     

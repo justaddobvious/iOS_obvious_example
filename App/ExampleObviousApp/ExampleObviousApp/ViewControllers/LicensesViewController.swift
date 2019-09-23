@@ -18,6 +18,7 @@ public struct LicensesData {
 class LicensesViewController: UITableViewController {
     private var licenses: [LicensesData] = [
         LicensesData(titleText: "Alamofire", url: URL(string: "https://raw.githubusercontent.com/Alamofire/Alamofire/master/LICENSE")!),
+        LicensesData(titleText: "CryptoSwift", url: URL(string: "https://raw.githubusercontent.com/krzyzanowskim/CryptoSwift/master/LICENSE")!),
         LicensesData(titleText: "ObviousAPI", url: URL(string: "https://obvious.xyz/")!),
         LicensesData(titleText: "Stripe", url: URL(string: "https://raw.githubusercontent.com/stripe/stripe-ios/master/LICENSE")!)
     ]

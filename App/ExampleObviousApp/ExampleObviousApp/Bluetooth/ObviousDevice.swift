@@ -16,19 +16,16 @@ class ObviousDevice: NSObject {
     
     private static let BOILERPLATE_APP_VER: String = "1.0.0"
     
-    public weak var delegate: ObviousDeviceDelegate?
-    
     private var featureManager: OcelotFeatureManager!
     private var firmwareManager: OcelotFirmwareManager!
     private var deviceConnector: OcelotDeviceConnector!
-    private var featureList: [OcelotFeatureInfo] = []
     private var serviceInfo: [CBUUID: [CBUUID]] = [:]
     private var discoveredServices: Set<String> = Set<String>()
     private var discoveredServicesCounter: Int = 0
     private var characteristicDict: [String: CBCharacteristic] = [:]
     private var serialNumber: String?
-    private var featureCount: Int = 0
     private var fwUpgradeInProgress: Bool = false
+    private var fwAvailableListener: OcelotFirmwareAvailableListener?
     
     private(set) var peripheral: CBPeripheral!
     
@@ -41,16 +38,24 @@ class ObviousDevice: NSObject {
     
     private func setupObvious() {
         featureManager = OcelotFeatureManager.getDemoFeatureManager()
-        featureManager.setFeatureEventListener(self)
         featureManager.setAPIKey(OCELOTPRODUCTIDENTIFIER.EXAMPLE_API_KEY)
         deviceConnector = featureManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
         firmwareManager = OcelotFirmwareManager.getDemoFirmwareManager()
-        firmwareManager.setEventListener(self)
         firmwareManager.setAPIKey(OCELOTPRODUCTIDENTIFIER.EXAMPLE_API_KEY)
         if let serviceCharMap = deviceConnector.getServerInformation() {
             serviceInfo = serviceCharMap
         }
+    }
+    
+    public func setListeners(_ featureListener: OcelotFeatureEventListener,
+                             _ toggleListener: OcelotToggleEventListener,
+                             _ firmwareEventListener: OcelotFirmwareEventListener,
+                             _ firmwareAvailableListener: OcelotFirmwareAvailableListener) {
+        featureManager.setFeatureEventListener(featureListener)
+        featureManager.setToggleEventListener(toggleListener)
+        firmwareManager.setEventListener(firmwareEventListener)
+        fwAvailableListener = firmwareAvailableListener
     }
     
     public func startFeatureUpdate() {
@@ -66,10 +71,26 @@ class ObviousDevice: NSObject {
         firmwareManager.startFirmwareUpgrade(ObviousDevice.BOILERPLATE_APP_VER)
     }
     
-    public func startFirmareCheckAndFeatureUpdate() {
+    public func didFinishFirmwareUpgrade() {
+        fwUpgradeInProgress = false
+    }
+    
+    public func getFeatureList() {
+        featureManager.getFeatureList()
+    }
+    
+    public func checkFeatureStatus(featureId: Int) {
+        featureManager.checkFeatureStatus(featureid: featureId)
+    }
+    
+    public func getSerial() -> String? {
+        return featureManager.getSerialNumber()
+    }
+    
+    public func startFirmwareCheck(_ listener: OcelotFirmwareAvailableListener) {
         deviceConnector = firmwareManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
-        firmwareManager.upgradeCheck(ObviousDevice.BOILERPLATE_APP_VER, self)
+        firmwareManager.upgradeCheck(ObviousDevice.BOILERPLATE_APP_VER, listener)
     }
     
     public func resetFeatures() {
@@ -77,6 +98,13 @@ class ObviousDevice: NSObject {
         deviceConnector.setConnectorCallback(self)
         featureManager.startFeatureReset()
     }
+    
+    public func toggleFeature(id: Int) {
+        deviceConnector = featureManager.getDeviceConnector()
+        deviceConnector.setConnectorCallback(self)
+        featureManager.toggleFeature(featureid: id)
+    }
+    
     
 }
 
@@ -104,7 +132,9 @@ extension ObviousDevice: CBPeripheralDelegate {
         }
         if discoveredServicesCounter == discoveredServices.count {
             if !fwUpgradeInProgress {
-                startFirmareCheckAndFeatureUpdate()
+                if let listener = fwAvailableListener {
+                    startFirmwareCheck(listener)
+                }
             }
             discoveredServicesCounter = 0
         }
@@ -169,164 +199,4 @@ extension ObviousDevice: OcelotDeviceConnectorCallback {
         return OCELOTPRODUCTIDENTIFIER.EXAMPLE_MANUFACTURER_PRODUCT_ID
     }
     
-}
-
-extension ObviousDevice: OcelotFeatureEventListener {
-    func onFeatureUpdateStatus(_ status: Int) {
-        if status == FeatureUpdateConstants.SUCCESS {
-            featureManager.getFeatureList()
-            serialNumber = featureManager.getSerialNumber()
-            delegate?.didUpdateSerialNumber(serialNumber: serialNumber)
-            
-        }
-        delegate?.didUpdateFeatureUpdateStatus(status: status)
-        
-        // Below contains the feature update statuses that may be called back
-        // from didUpdateFeatureUpdateStatus
-        switch status {
-        case FeatureUpdateConstants.SUCCESS:
-            debugPrint("Feature update: Success")
-            break
-        case FeatureUpdateConstants.CLEAR_SUCCESS:
-            debugPrint("Feature update: Clear Features Success")
-            break
-        case FeatureUpdateConstants.SUCCESS_RESETTING:
-            debugPrint("Feature update: Resetting")
-            break
-        case FeatureUpdateConstants.NOT_PROVISIONED:
-            debugPrint("Device is not provisioned")
-            break
-        case FeatureUpdateConstants.RESET_COMPLETE:
-            debugPrint("Feature update: Reset complete")
-            break
-        case FeatureUpdateConstants.DOWNLOAD_FAILED:
-            debugPrint("Feature file download failed")
-            break
-        case FeatureUpdateConstants.WRITE_FAILED:
-            debugPrint("Feature file write failed")
-            break
-        case FeatureUpdateConstants.CLEAR_FAILED:
-            debugPrint("Feature clear failed")
-            break
-        case FeatureUpdateConstants.FAILED:
-            debugPrint("Feature Update failed")
-            break
-        case FeatureUpdateConstants.TIMEOUT:
-            debugPrint("Timeout occured during feature update process")
-            break
-        default:
-            debugPrint("\(#function) Status update: \(status)")
-            break
-        }
-    }
-    
-    func onProvisioningStatus(_ status: Int) {
-        debugPrint("onProvisioningStatus  \(status)")
-        
-        // Below contains the provisioning statuses that may be called back
-        // from onProvisioningStatus
-        switch status {
-        case ProvisionUpdateConstants.SUCCESS:
-            debugPrint("Provisioning: Success")
-            break
-        case ProvisionUpdateConstants.START:
-            debugPrint("Provisioning: Starting")
-        case ProvisionUpdateConstants.DOWNLOAD_FAILED:
-            debugPrint("Provision file download failed")
-            break
-        case ProvisionUpdateConstants.WRITE_FAILED:
-            debugPrint("Provision file write failed")
-            break
-        case ProvisionUpdateConstants.FAILED:
-            debugPrint("Provisioning failure")
-            break
-        case ProvisionUpdateConstants.TIMEOUT:
-            debugPrint("Timeout occured during provisioning process")
-        default:
-            debugPrint("\(#function) Status update: \(status)")
-            break
-        }
-    }
-    
-    func onCheckFeatureStatus(_ featureid: Int, _ status: Int) {
-        debugPrint("\(#function) - featureid: \(featureid) status: \(status)")
-        if let index = featureList.firstIndex(where: { feature in feature.id == featureid }) {
-            featureList[index].active = (status == 1)
-        } else {
-            debugPrint("\(#function) - Error: featureid: \(featureid) not found.")
-        }
-        checkFeatureListStatus()
-    }
-    
-    func onFeatureList(_ features: [String : Int]?) {
-        debugPrint("\(#function) - Feature List obtained: \(String(describing: features))")
-        if let list = features {
-            featureList = []
-            for (feature, id) in list {
-                featureList.append(OcelotFeatureInfo(id: id, name: feature, active: false))
-            }
-        }
-        checkFeatureListStatus()
-    }
-    
-    private func checkFeatureListStatus() {
-        if featureCount < featureList.count {
-            let id = featureList[featureCount].id
-            featureManager.checkFeatureStatus(featureid: id)
-            featureCount += 1
-        } else {
-            delegate?.didFinishFeatureListStatusCheck(featureList: featureList)
-            featureCount = 0
-        }
-    }
-    
-}
-
-extension ObviousDevice: OcelotFirmwareEventListener {
-    func onFirmwareProgressUpdate(_ serialNumber: String, _ percent: Int) {
-        delegate?.didUpdateFirmwareProgress(serialNumber: serialNumber, percent: percent)
-    }
-    
-    func onFirmwareUpgradeStatus(_ status: OcelotFirmwareManager.OcelotFirmwareUpgradeStatus) {
-        fwUpgradeInProgress = false
-        if status == .SUCCESS {
-            delegate?.didFirmwareUpgradeSuccess()
-        } else {
-            delegate?.didFirmwareUpgradeFail()
-        }
-        
-        // Below contains the firmware upgrade statuses that may be called back
-        // from onFirmwareUpgradeStatus
-        switch status {
-        case .SUCCESS:
-            debugPrint("Firmware Upgrade: Success")
-            break
-        case .DOWNLOAD_FAILED:
-            debugPrint("Firmware file download failed")
-            break
-        case .FAILED:
-            debugPrint("Firmware upgrade failure")
-            break
-        case .BOND_CANCELLED:
-            debugPrint("Bonding request was cancelled")
-            break
-        case .UNAVAILABLE:
-            debugPrint("Firmware upgrades not available on device")
-            break
-        }
-    }
-}
-
-extension ObviousDevice: OcelotFirmwareAvailableListener {
-    func onFirmwareUpgradeAvailable(currentVersion: Int64, newFirmwareInfo: OcelotFirmwareInfo?) {
-        // currentVersion: The firmware version on the connected device.
-        // Check if the version code is equal to the constant, OcelotServiceConstants.INVALID_FIRMWARE_VERSION.
-        // If it is equal, then the firmware version is invalid and cannot be read. Else, the format of the
-        // version code is as follows, starting from the most significant digit:
-        //                    XXX,    XXX,    XXX
-        //                  (major).(minor).(patch)
-        // where X represents each digit in the Int64 value.
-        delegate?.didCheckFirmware(currentVersion: currentVersion == OcelotServiceConstants.INVALID_FIRMWARE_VERSION ? "unknown" : "\(String(format: "%d", ((currentVersion / 1000000) % 1000))).\(String(format: "%d", ((currentVersion / 1000) % 1000))).\(String(format: "%d", (currentVersion % 1000)) )", updateAvailable: newFirmwareInfo != nil)
-        startFeatureUpdate()
-    }
 }

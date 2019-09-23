@@ -10,7 +10,6 @@
 
 import UIKit
 import ObviousAPI
-import Stripe
 
 class CheckoutViewController: UIViewController {
     
@@ -19,35 +18,31 @@ class CheckoutViewController: UIViewController {
     
     public var checkoutList: [CatalogItem] = []
     public var catalogInteractor: OcelotCatalogInteractor!
+    private var paymentClient: OcelotPaymentClient?
+    private lazy var paymentFailedAlert: UIAlertController = UIAlertController(title: "Payment Failed", message: "Payment could not be processed.", preferredStyle: .alert)
     public var totalPrice: String!
     public var cartId: Int!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        paymentFailedAlert.addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
         totalPriceLabel.text = totalPrice
         catalogInteractor.setCheckoutListener(self)
+        paymentClient = OcelotPaymentClient.getDemoPaymentClient(obviousClient: catalogInteractor, listener: self)
         checkoutTableView.dataSource = self
         checkoutTableView.delegate = self
     }
     
     @IBAction func confirmButtonPressed(_ sender: Any) {
         if let serial = StateManager.shared.currentSerialNumber {
-            let cardParams = STPCardParams()
-            cardParams.name = "Batman"
-            cardParams.number = "4242424242424242"
-            cardParams.expMonth = 4
-            cardParams.expYear = 33
-            cardParams.cvc = "242"
             
-            STPAPIClient.shared().createToken(withCard: cardParams) { [unowned self] (token: STPToken?, error: Error?) in
-                if error != nil {
-                    let alert = UIAlertController(title: "Payment Failed", message: "Payment could not be processed.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
-                    self.present(alert, animated: true, completion: nil)
-                } else {
-                    self.catalogInteractor.checkoutPay(cartId: self.cartId, tokenId: token!.tokenId, serialNumber: serial, productIdentifier: OCELOTPRODUCTIDENTIFIER.EXAMPLE_MANUFACTURER_PRODUCT_ID)
-                }
-            }
+        paymentClient?.startPaymentProcessing(cardNumber: "4242424242424242",
+                                              cardExpMonth: 4,
+                                              cardExpYear: 33,
+                                              cardCVC: "242",
+                                              cartId: cartId,
+                                              serialNumber: serial,
+                                              productId: OCELOTPRODUCTIDENTIFIER.EXAMPLE_MANUFACTURER_PRODUCT_ID)
             
             
         } else {
@@ -77,12 +72,21 @@ extension CheckoutViewController: UITableViewDataSource, UITableViewDelegate {
 }
 
 extension CheckoutViewController: OcelotCatalogCheckoutResultListener {
+    func onCheckoutPayActionRequired(_ paymentSecret: String) {
+        paymentClient?.authenticatePayment(viewController: self, cartId: cartId, paymentSecret: paymentSecret, isPresentingApplePay: false)
+    }
+    
     func onCheckoutCartSuccess(_ totalPrice: Int, _ cartId: Int) {
-        // Handle checkout cart success event here
+        // MARK: Handle checkout cart success event here
     }
     
     func onCheckoutCartFail(_ error: String?) {
-        // Handle checkout cart failure event here
+        // MARK: Handle checkout cart failure event here
+        DispatchQueue.main.async { [weak self] in
+            if let alert = self?.paymentFailedAlert {
+                self?.present(alert, animated: true, completion: nil)
+            }
+        }
     }
     
     func onCheckoutPaySuccess() {
@@ -98,10 +102,11 @@ extension CheckoutViewController: OcelotCatalogCheckoutResultListener {
     }
     
     func onCheckoutPayFail(_ error: String?) {
+        // MARK: Handle checkout pay failure event here.
         DispatchQueue.main.async { [weak self] in
-            let alert = UIAlertController(title: "Payment Failed", message: "Payment could not be processed.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
-            self?.present(alert, animated: true, completion: nil)
+            if let alert = self?.paymentFailedAlert {
+                self?.present(alert, animated: true, completion: nil)
+            }
         }
     }
 }

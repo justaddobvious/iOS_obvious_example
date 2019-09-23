@@ -94,11 +94,16 @@ extension StoreViewController: OcelotCatalogListResultListener {
     }
     
     func onCatalogListRequestFail(_ error: String?) {
-        // Handle catalog list request fail event here.
+        // MARK: Handle catalog list request fail event here.
     }
 }
 
 extension StoreViewController: OcelotCatalogCheckoutResultListener {
+    func onCheckoutPayActionRequired(_ paymentSecret: String) {
+        // MARK: If a checkout payment event requires further authentication, handle the payment secret from this
+        // callback.
+    }
+    
     func onCheckoutCartSuccess(_ totalPrice: Int, _ cartId: Int) {
         DispatchQueue.main.async { [weak self] in
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -112,14 +117,14 @@ extension StoreViewController: OcelotCatalogCheckoutResultListener {
     }
     
     func onCheckoutCartFail(_ error: String?) {
-        // Handle checkout cart failure event here.
+        // MARK: Handle checkout cart failure event here.
     }
     
     func onCheckoutPaySuccess() {
-        // Handle checkout pay success event here.
+        // MARK: Handle checkout pay success event here.
     }
     
     func onCheckoutPayFail(_ error: String?) {
-        // Handle checkout pay failure event here.
+        // MARK: Handle checkout pay failure event here.
     }
 }

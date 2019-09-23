@@ -194,29 +194,48 @@
                                         <rect key="frame" x="0.0" y="181" width="375" height="422"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <prototypes>
-                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="featureCell" textLabel="ga3-IS-aPa" detailTextLabel="8Wt-UV-pE2" style="IBUITableViewCellStyleValue1" id="1Ga-pD-kZ6">
+                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="featureCell" id="1Ga-pD-kZ6" customClass="FeatureCell" customModule="ExampleObviousApp" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="28" width="375" height="44"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="1Ga-pD-kZ6" id="vWx-Ez-ylK">
                                                     <rect key="frame" x="0.0" y="0.0" width="375" height="43.5"/>
                                                     <autoresizingMask key="autoresizingMask"/>
                                                     <subviews>
-                                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="ga3-IS-aPa">
-                                                            <rect key="frame" x="15" y="12" width="33.5" height="20.5"/>
-                                                            <autoresizingMask key="autoresizingMask"/>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.59999999999999998" translatesAutoresizingMaskIntoConstraints="NO" id="cXz-lf-8sg">
+                                                            <rect key="frame" x="15" y="11.5" width="150" height="21"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
-                                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Detail" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="8Wt-UV-pE2">
-                                                            <rect key="frame" x="316" y="12" width="44" height="20.5"/>
-                                                            <autoresizingMask key="autoresizingMask"/>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Status" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Eob-ZI-ACm">
+                                                            <rect key="frame" x="175" y="11.5" width="121" height="21"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
+                                                        <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mVP-mU-Q3k">
+                                                            <rect key="frame" x="311" y="6.5" width="51" height="31"/>
+                                                            <connections>
+                                                                <action selector="onToggleValueChanged:" destination="1Ga-pD-kZ6" eventType="valueChanged" id="wqy-FG-VVM"/>
+                                                            </connections>
+                                                        </switch>
                                                     </subviews>
+                                                    <constraints>
+                                                        <constraint firstItem="Eob-ZI-ACm" firstAttribute="leading" secondItem="cXz-lf-8sg" secondAttribute="trailing" constant="10" id="2gV-0Q-5un"/>
+                                                        <constraint firstItem="Eob-ZI-ACm" firstAttribute="centerY" secondItem="vWx-Ez-ylK" secondAttribute="centerY" id="C7P-LZ-1hL"/>
+                                                        <constraint firstItem="cXz-lf-8sg" firstAttribute="centerY" secondItem="vWx-Ez-ylK" secondAttribute="centerY" id="IIk-gh-d1l"/>
+                                                        <constraint firstItem="cXz-lf-8sg" firstAttribute="width" secondItem="vWx-Ez-ylK" secondAttribute="width" multiplier="0.4" id="RV5-xX-BaA"/>
+                                                        <constraint firstItem="mVP-mU-Q3k" firstAttribute="centerY" secondItem="vWx-Ez-ylK" secondAttribute="centerY" id="crg-bB-mVk"/>
+                                                        <constraint firstItem="cXz-lf-8sg" firstAttribute="leading" secondItem="vWx-Ez-ylK" secondAttribute="leading" constant="15" id="mpo-t3-d03"/>
+                                                        <constraint firstItem="Eob-ZI-ACm" firstAttribute="trailing" secondItem="mVP-mU-Q3k" secondAttribute="leading" constant="-15" id="p9J-UW-hT9"/>
+                                                        <constraint firstItem="mVP-mU-Q3k" firstAttribute="trailing" secondItem="vWx-Ez-ylK" secondAttribute="trailing" constant="-15" id="tFV-rh-x5E"/>
+                                                    </constraints>
                                                 </tableViewCellContentView>
+                                                <connections>
+                                                    <outlet property="statusLabel" destination="Eob-ZI-ACm" id="DIj-PJ-lOo"/>
+                                                    <outlet property="titleLabel" destination="cXz-lf-8sg" id="74E-qQ-Pma"/>
+                                                    <outlet property="toggleSwitch" destination="mVP-mU-Q3k" id="5qY-T3-g4g"/>
+                                                </connections>
                                             </tableViewCell>
                                         </prototypes>
                                     </tableView>
@@ -240,7 +259,7 @@
                     <navigationItem key="navigationItem" title="Device" id="HAp-Lt-7B7"/>
                     <connections>
                         <outlet property="deviceNameLabel" destination="eMv-Nd-mHd" id="JLC-TL-Ea5"/>
-                        <outlet property="featureList" destination="Yhz-qH-9Rf" id="SyH-V1-N5o"/>
+                        <outlet property="featureListView" destination="Yhz-qH-9Rf" id="SyH-V1-N5o"/>
                         <outlet property="firmwareButton" destination="00U-oQ-PIK" id="H5r-Es-c4q"/>
                         <outlet property="firmwareVersionLabel" destination="qCO-ps-Mm7" id="WhX-VU-vzd"/>
                         <outlet property="resetButton" destination="NWJ-19-t10" id="ymn-Mi-85G"/>
