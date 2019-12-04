@@ -131,6 +131,8 @@ extension ObviousDevice: CBPeripheralDelegate {
             discoveredServicesCounter += 1
         }
         if discoveredServicesCounter == discoveredServices.count {
+            // MARK: BLE services and characteristics must first be discovered before the device connecter can receive an OcelotDeviceConnector.CONNECTION_STATE_CONNECTED event.
+            deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, OcelotDeviceConnector.CONNECTION_STATE_CONNECTED)
             if !fwUpgradeInProgress {
                 if let listener = fwAvailableListener {
                     startFirmwareCheck(listener)
@@ -159,12 +161,7 @@ extension ObviousDevice: CBPeripheralDelegate {
     }
     
     func handleConnectionState(_ state: Int) {
-        if state == OcelotDeviceConnector.CONNECTION_STATE_CONNECTED {
-            peripheral.discoverServices(Array(serviceInfo.keys))
-        }
-        featureManager.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
-        firmwareManager.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
-        deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
+        state == OcelotDeviceConnector.CONNECTION_STATE_CONNECTED ? peripheral.discoverServices(Array(serviceInfo.keys)) : deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
     }
 }
 
