@@ -26,7 +26,6 @@ class FeatureCell: UITableViewCell {
 
 class DeviceViewController: UIViewController {
     @IBOutlet weak var deviceNameLabel: UILabel!
-    @IBOutlet weak var resetButton: UIButton!
     @IBOutlet weak var serialLabel: UILabel!
     @IBOutlet weak var firmwareVersionLabel: UILabel!
     @IBOutlet weak var firmwareButton: UIButton!
@@ -59,10 +58,6 @@ class DeviceViewController: UIViewController {
             BluetoothInteractor.shared.forgetAndDisconnectCurrentDevice()
             StateManager.shared.currentSerialNumber = nil
         }
-    }
-    
-    @IBAction func resetButtonPressed(_ sender: Any) {
-        currentDevice?.resetFeatures()
     }
     
     @IBAction func firmwareButtonPressed(_ sender: Any) {

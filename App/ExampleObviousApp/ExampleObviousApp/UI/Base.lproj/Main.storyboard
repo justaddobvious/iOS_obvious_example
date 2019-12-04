@@ -139,30 +139,13 @@
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="M65-ZH-8h2">
                                 <rect key="frame" x="0.0" y="44" width="375" height="623"/>
                                 <subviews>
-                                    <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PMh-Sb-i1N">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="--" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eMv-Nd-mHd">
                                         <rect key="frame" x="0.0" y="0.0" width="375" height="62.5"/>
-                                        <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="--" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eMv-Nd-mHd">
-                                                <rect key="frame" x="0.0" y="0.0" width="262.5" height="62.5"/>
-                                                <color key="backgroundColor" name="OcelotBackgroundColor"/>
-                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                <nil key="textColor"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="tailTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NWJ-19-t10">
-                                                <rect key="frame" x="262.5" y="0.0" width="112.5" height="62.5"/>
-                                                <color key="backgroundColor" name="OcelotBackgroundColor"/>
-                                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                                <state key="normal" title="Reset Features"/>
-                                                <connections>
-                                                    <action selector="resetButtonPressed:" destination="lTi-sq-aVg" eventType="touchUpInside" id="2Ib-QT-Hx8"/>
-                                                </connections>
-                                            </button>
-                                        </subviews>
-                                        <constraints>
-                                            <constraint firstItem="eMv-Nd-mHd" firstAttribute="width" secondItem="PMh-Sb-i1N" secondAttribute="width" multiplier="0.7" id="oe1-x9-Gwc"/>
-                                        </constraints>
-                                    </stackView>
+                                        <color key="backgroundColor" name="OcelotBackgroundColor"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="--" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RAK-4c-gyc">
                                         <rect key="frame" x="0.0" y="62.5" width="375" height="62"/>
                                         <color key="backgroundColor" name="OcelotBackgroundColor"/>
@@ -245,9 +228,9 @@
                                     </tableView>
                                 </subviews>
                                 <constraints>
-                                    <constraint firstItem="ZOo-Fu-MUk" firstAttribute="height" secondItem="PMh-Sb-i1N" secondAttribute="height" id="63K-6x-hAA"/>
-                                    <constraint firstItem="PMh-Sb-i1N" firstAttribute="height" secondItem="M65-ZH-8h2" secondAttribute="height" multiplier="0.1" id="RZ6-tl-YwB"/>
-                                    <constraint firstItem="RAK-4c-gyc" firstAttribute="height" secondItem="PMh-Sb-i1N" secondAttribute="height" id="ygN-cR-seC"/>
+                                    <constraint firstItem="ZOo-Fu-MUk" firstAttribute="height" secondItem="eMv-Nd-mHd" secondAttribute="height" id="Pe0-Y1-j2Q"/>
+                                    <constraint firstItem="eMv-Nd-mHd" firstAttribute="height" secondItem="M65-ZH-8h2" secondAttribute="height" multiplier="0.1" id="nAD-X3-tim"/>
+                                    <constraint firstItem="RAK-4c-gyc" firstAttribute="height" secondItem="eMv-Nd-mHd" secondAttribute="height" id="rbl-K9-muB"/>
                                 </constraints>
                             </stackView>
                         </subviews>
@@ -266,7 +249,6 @@
                         <outlet property="featureListView" destination="Yhz-qH-9Rf" id="SyH-V1-N5o"/>
                         <outlet property="firmwareButton" destination="00U-oQ-PIK" id="H5r-Es-c4q"/>
                         <outlet property="firmwareVersionLabel" destination="qCO-ps-Mm7" id="WhX-VU-vzd"/>
-                        <outlet property="resetButton" destination="NWJ-19-t10" id="ymn-Mi-85G"/>
                         <outlet property="serialLabel" destination="RAK-4c-gyc" id="zUk-B6-eL0"/>
                     </connections>
                 </viewController>

@@ -93,12 +93,6 @@ class ObviousDevice: NSObject {
         firmwareManager.upgradeCheck(ObviousDevice.BOILERPLATE_APP_VER, listener)
     }
     
-    public func resetFeatures() {
-        deviceConnector = featureManager.getDeviceConnector()
-        deviceConnector.setConnectorCallback(self)
-        featureManager.startFeatureReset()
-    }
-    
     public func toggleFeature(id: Int) {
         deviceConnector = featureManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
