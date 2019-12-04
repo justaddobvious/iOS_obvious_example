@@ -153,13 +153,13 @@
 			isa = PBXGroup;
 			children = (
 				AB6DD051224D6BE20022CD8F /* Bluetooth */,
+				AB8D6CBA23982C0000FDB068 /* UI */,
 				AB6DD052224D6BEC0022CD8F /* ViewControllers */,
 				AB6DD01F224D5E250022CD8F /* AppDelegate.swift */,
 				AB6DD067224ED7620022CD8F /* Extensions.swift */,
 				AB88EBBD228F5048002093A7 /* OcelotConstants.swift */,
 				ABF2E1CE22832ED200E7A987 /* StateManager.swift */,
 				AB6DD02A224D5E260022CD8F /* Assets.xcassets */,
-				AB6DD02C224D5E260022CD8F /* LaunchScreen.storyboard */,
 				AB6DD02F224D5E260022CD8F /* Info.plist */,
 			);
 			path = ExampleObviousApp;
@@ -197,7 +197,6 @@
 		AB6DD052224D6BEC0022CD8F /* ViewControllers */ = {
 			isa = PBXGroup;
 			children = (
-				AB6DD027224D5E250022CD8F /* Main.storyboard */,
 				AB6DD065224ECF620022CD8F /* CheckoutViewController.swift */,
 				AB6DD055224D6C190022CD8F /* DeviceViewController.swift */,
 				AB6DD053224D6C0A0022CD8F /* ScanViewController.swift */,
@@ -205,6 +204,15 @@
 				ABB579AC22824A6C00844215 /* LicensesViewController.swift */,
 			);
 			path = ViewControllers;
+			sourceTree = "<group>";
+		};
+		AB8D6CBA23982C0000FDB068 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				AB6DD02C224D5E260022CD8F /* LaunchScreen.storyboard */,
+				AB6DD027224D5E250022CD8F /* Main.storyboard */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
