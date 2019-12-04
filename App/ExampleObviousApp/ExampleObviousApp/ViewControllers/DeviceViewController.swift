@@ -86,7 +86,7 @@ extension DeviceViewController: UITableViewDataSource, UITableViewDelegate {
         cell.isUserInteractionEnabled = true
         cell.titleLabel.text = feature.name
         if feature.status == .Disabled {
-            cell.statusLabel.text = "Purchasable"
+            cell.statusLabel.text = "Locked"
         } else if feature.status == .Enabled(toggleState: .Deactivated) {
             cell.statusLabel.text = "Deactivated"
         } else if feature.status?.toggleState == .Activated {
@@ -305,6 +305,11 @@ extension DeviceViewController: OcelotFirmwareEventListener {
             debugPrint("Firmware upgrades not available on device")
             break
         }
+        
+        let alert = UIAlertController(title: "Firmware Upgrade", message: "Firmware upgrade \(status == .SUCCESS ? "was successful" : "failed")!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
+        
     }
 }
 
@@ -320,7 +325,6 @@ extension DeviceViewController: OcelotFirmwareAvailableListener {
         
         let ver = currentVersion == OcelotServiceConstants.INVALID_FIRMWARE_VERSION ? "unknown" : "\(String(format: "%d", ((currentVersion / 1000000) % 1000))).\(String(format: "%d", ((currentVersion / 1000) % 1000))).\(String(format: "%d", (currentVersion % 1000)) )"
         DispatchQueue.main.async { [weak self] in
-            self?.firmwareButton.isUserInteractionEnabled = newFirmwareInfo != nil
             self?.firmwareVersionLabel.text = "firmware version: " + ver
         }
         currentDevice?.startFeatureUpdate()
