@@ -24,30 +24,58 @@ class FeatureCell: UITableViewCell {
     
 }
 
-class DeviceViewController: UIViewController {
+class DeviceViewController: ObviousViewController {
     @IBOutlet weak var deviceNameLabel: UILabel!
     @IBOutlet weak var serialLabel: UILabel!
+    @IBOutlet weak var featuresAvailableLabel: UILabel!
     @IBOutlet weak var firmwareVersionLabel: UILabel!
     @IBOutlet weak var firmwareButton: UIButton!
     @IBOutlet weak var featureListView: UITableView!
+    @IBOutlet weak var softDeviceVersion: UILabel!
+    @IBOutlet weak var bootloaderVersion: UILabel!
     
     public var currentDevice: ObviousDevice?
     private var featureList: [ObviousFeatureInfo] = []
     private var featureIdIndexMap: [Int: Int] = [:]
     private var featureCount: Int = 0
     
+    private var currFWVersion: String?
+    private var newFWVersion: String?
+    private var fwUpgradeInProgress: Bool = false
+    
+    private let synchronizingAlert: UIAlertController = UIAlertController(title: "Synchronizing...", message: nil, preferredStyle: .alert)
+    
+    //-------------- Alerts for device
+    private lazy var firmwareUpdateProgressView: UIProgressView = UIProgressView(progressViewStyle: .default)
+    private lazy var firmwareUpdateProgressAlert: UIAlertController = UIAlertController(title: "Firmware Updating...", message: nil, preferredStyle: .alert)
+    private lazy var firmwareUpdateNotAvailable: UIAlertController = UIAlertController(title: "No Update Available", message: "Your firmware is up to date.", preferredStyle: .alert)
+    private lazy var firmwareUpdateAvailable: UIAlertController = UIAlertController(title: "Firmware Update Available", message: "Version \(newFWVersion ?? "Unknown") is available. Do you want to update?", preferredStyle: .alert)
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         BluetoothInteractor.shared.delegate = self
         featureListView.delegate = self
         featureListView.dataSource = self
-        deviceNameLabel.text = currentDevice?.peripheral.name ?? "unknown device name"
+        deviceNameLabel.text = currentDevice?.peripheral.name ?? "Unknown Device Name"
+        
+    
+        currentDevice?.setDeviceInfoDelegate(delegate: self)
+        
+        firmwareUpdateProgressView.frame = CGRect(x: 10, y: 70, width: 250, height: 0)
+        firmwareUpdateProgressAlert.view.addSubview(firmwareUpdateProgressView)
+        
+        firmwareUpdateNotAvailable.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+        firmwareUpdateAvailable.addAction(UIAlertAction(title: "Yes", style: .default, handler: {(action:UIAlertAction) in
+            self.present(self.firmwareUpdateProgressAlert, animated: true, completion: self.currentDevice?.startFirmwareUpgrade)
+        }))
+        firmwareUpdateAvailable.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+        present(synchronizingAlert, animated: true, completion: nil)
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if StateManager.shared.purchaseMade {
-            currentDevice?.startFirmwareCheck(self)
+            currentDevice?.startFeatureUpdate()
             StateManager.shared.purchaseMade = false
         }
     }
@@ -61,7 +89,8 @@ class DeviceViewController: UIViewController {
     }
     
     @IBAction func firmwareButtonPressed(_ sender: Any) {
-        currentDevice?.startFirmwareUpgrade()
+        firmwareUpdateProgressView.progress = 0.0
+        currentDevice?.startFirmwareCheck(self)
     }
 }
 
@@ -131,91 +160,96 @@ extension DeviceViewController: OcelotFeatureEventListener {
     func onFeatureUpdateStatus(_ status: Int) {
         if status == FeatureUpdateConstants.SUCCESS {
             currentDevice?.getFeatureList()
-            StateManager.shared.currentSerialNumber = currentDevice?.getSerial()
-            DispatchQueue.main.async { [weak self] in
-                self?.serialLabel.text = StateManager.shared.currentSerialNumber
-            }
-            
         }
         
-        // MARK: Below contains the feature update statuses that may be called back
-        // from didUpdateFeatureUpdateStatus.
+        // MARK: Handle feauture update state callbacks here
+        if status != FeatureUpdateConstants.CLEAR_SUCCESS &&
+            status != FeatureUpdateConstants.SUCCESS_RESETTING &&
+            status != FeatureUpdateConstants.NOT_PROVISIONED &&
+            status != FeatureUpdateConstants.RESET_COMPLETE {
+            DispatchQueue.main.async { [weak self] in
+                self?.synchronizingAlert.dismiss(animated: true, completion: { [weak self] () -> () in
+                    let featureUpdateCompleteAlert = UIAlertController(title: "Feature Update Complete", message: status == FeatureUpdateConstants.SUCCESS ? "Features updated successfully!" : "Feature update failed! Status Code: \(status)", preferredStyle: .alert)
+                    featureUpdateCompleteAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+                    self?.present(featureUpdateCompleteAlert, animated: true, completion: nil)
+                })
+            }
+        }
+        
+        // MARK: Below contains the feature update statuses that may be called back.
         switch status {
         case FeatureUpdateConstants.SUCCESS:
-            debugPrint("Feature update: Success")
+            print("Feature update: Success")
             break
         case FeatureUpdateConstants.CLEAR_SUCCESS:
-            debugPrint("Feature update: Clear Features Success")
+            print("Feature update: Clear Features Success")
             break
         case FeatureUpdateConstants.SUCCESS_RESETTING:
-            debugPrint("Feature update: Resetting")
+            print("Feature update: Resetting")
             break
         case FeatureUpdateConstants.NOT_PROVISIONED:
-            debugPrint("Device is not provisioned")
+            print("Device is not provisioned")
             break
         case FeatureUpdateConstants.RESET_COMPLETE:
-            debugPrint("Feature update: Reset complete")
+            print("Feature update: Reset complete")
             break
         case FeatureUpdateConstants.DOWNLOAD_FAILED:
-            debugPrint("Feature file download failed")
+            print("Feature file download failed")
             break
         case FeatureUpdateConstants.WRITE_FAILED:
-            debugPrint("Feature file write failed")
+            print("Feature file write failed")
             break
         case FeatureUpdateConstants.CLEAR_FAILED:
-            debugPrint("Feature clear failed")
+            print("Feature clear failed")
             break
         case FeatureUpdateConstants.FAILED:
-            debugPrint("Feature Update failed")
+            print("Feature Update failed")
             break
         case FeatureUpdateConstants.TIMEOUT:
-            debugPrint("Timeout occured during feature update process")
+            print("Timeout occured during feature update process")
             break
         default:
-            debugPrint("\(#function) Status update: \(status)")
+            print("\(#function) Status update: \(status)")
             break
         }
     }
     
     func onProvisioningStatus(_ status: Int) {
-        debugPrint("onProvisioningStatus  \(status)")
+        print("onProvisioningStatus  \(status)")
         
-        // MARK: Below contains the provisioning statuses that may be called back
-        // from onProvisioningStatus.
+        // MARK: Below contains the provisioning statuses that may be called back from onProvisioningStatus.
         switch status {
         case ProvisionUpdateConstants.SUCCESS:
-            debugPrint("Provisioning: Success")
+            print("Provisioning: Success")
             break
         case ProvisionUpdateConstants.START:
-            debugPrint("Provisioning: Starting")
+            print("Provisioning: Starting")
         case ProvisionUpdateConstants.DOWNLOAD_FAILED:
-            debugPrint("Provision file download failed")
+            print("Provision file download failed")
             break
         case ProvisionUpdateConstants.WRITE_FAILED:
-            debugPrint("Provision file write failed")
+            print("Provision file write failed")
             break
         case ProvisionUpdateConstants.FAILED:
-            debugPrint("Provisioning failure")
+            print("Provisioning failure")
             break
         case ProvisionUpdateConstants.TIMEOUT:
-            debugPrint("Timeout occured during provisioning process")
+            print("Timeout occured during provisioning process")
         default:
-            debugPrint("\(#function) Status update: \(status)")
+            print("\(#function) Status update: \(status)")
             break
         }
     }
     
     func onCheckFeatureStatus(_ featureid: Int, _ status: Int) {
-        // MARK: This callback was called for checking the statuses of features prior to Obvious Version
-        // 1.3. Please use the onCheckFeatureStatus(_:_:) from the OcelotToggleEventListener protocol.
+        // MARK: This callback was called for checking the statuses of features prior to Obvious Version 1.3. Please use the onCheckFeatureStatus(_:_:) from the OcelotToggleEventListener protocol.
     }
     
     func onFeatureList(_ features: [String : Int]?) {
-        debugPrint("\(#function) - Feature List obtained: \(String(describing: features))")
+        print("\(#function) - Feature List obtained: \(String(describing: features))")
         if let list = features {
             featureList = []
             for (feature, id) in list {
-                featureIdIndexMap[id] = featureList.count
                 featureList.append(ObviousFeatureInfo(id: id, name: feature, status: nil))
             }
         }
@@ -230,6 +264,7 @@ extension DeviceViewController: OcelotFeatureEventListener {
         } else {
             featureCount = 0
             DispatchQueue.main.async { [weak self] in
+                self?.featuresAvailableLabel.text = "Features Available: \(self?.featureList.count ?? 0)"
                 self?.featureListView.reloadData()
             }
         }
@@ -239,18 +274,17 @@ extension DeviceViewController: OcelotFeatureEventListener {
 
 extension DeviceViewController: OcelotToggleEventListener {
     func onCheckFeatureStatus(_ featureId: Int, _ status: OcelotFeatureStatus) {
-        debugPrint("\(#function) - featureid: \(featureId) status: \(status)")
+        print("\(#function) - featureid: \(featureId) status: \(status)")
         if let index = featureIdIndexMap[featureId] {
             featureList[index].status = status
         } else {
-            debugPrint("\(#function) - Error: featureid: \(featureId) not found. Should not get here.")
+            print("\(#function) - Error: featureid: \(featureId) not found. Should not get here.")
         }
         checkFeatureListStatus()
     }
     
     func onCheckFeatureStatuses(_ featureStatuses: [Int : OcelotFeatureStatus]) {
-        // MARK: If the OcelotFeatureManager method checkFeatureStatuses(featureIds:) is called to check
-        // feature statuses, handle the resulting feature statuses callback here.
+        // MARK: If the OcelotFeatureManager method checkFeatureStatuses(featureIds:) is called to check feature statuses, handle the resulting feature statuses callback here.
     }
     
     func didToggleFeatureStatus(_ featureId: Int, _ status: OcelotFeatureStatus) {
@@ -262,9 +296,7 @@ extension DeviceViewController: OcelotToggleEventListener {
     }
     
     func didToggleFeatureStatuses(_ featureStatuses: [Int : OcelotFeatureStatus]) {
-        // MARK: If the OcelotFeatureManager method setToggleStatuses(featureToggleStatuses:) is called to
-        // set the toggle statuses of certain feature statuses, handle the resulting feature statuses
-        // callback here.
+        // MARK: If the OcelotFeatureManager method setToggleStatuses(featureToggleStatuses:) is called to set the toggle statuses of certain feature statuses, handle the resulting feature statuses callback here.
     }
     
     func featureStatusFailure() {
@@ -272,39 +304,67 @@ extension DeviceViewController: OcelotToggleEventListener {
     }
 }
 
+extension DeviceViewController: OcelotDeviceInfoDelegate {
+    func onDeviceInfoAvailable(_ deviceInfo: OcelotDeviceInfo?) {
+        // MARK: Handle device meta info callback here
+        print(deviceInfo ?? "Device Info Nil!")
+        StateManager.shared.currentSerialNumber = deviceInfo?.serialNumber ?? "Unknown"
+        DispatchQueue.main.async { [weak self] in
+            if deviceInfo == nil {
+                self?.synchronizingAlert.dismiss(animated: true, completion: { [weak self] () -> () in
+                    let featureUpdateCompleteAlert = UIAlertController(title: "Feature Update Complete", message: "Feature update failed!", preferredStyle: .alert)
+                    featureUpdateCompleteAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+                    self?.present(featureUpdateCompleteAlert, animated: true, completion: nil)
+                })
+            }
+            self?.serialLabel.text = deviceInfo?.serialNumber
+            self?.currFWVersion = deviceInfo?.firmwareVersion
+            self?.firmwareVersionLabel.text =  deviceInfo?.firmwareVersion ?? "Unknown"
+            self?.softDeviceVersion.text = deviceInfo?.softDeviceVersion ?? "unknown"
+            self?.bootloaderVersion.text = deviceInfo?.bootLoaderVersion ?? "Unknown"
+            self?.currentDevice?.startFeatureUpdate()
+        }
+    }
+}
+
 extension DeviceViewController: OcelotFirmwareEventListener {
     func onFirmwareProgressUpdate(_ serialNumber: String, _ percent: Int) {
-        // MARK: Firmware upgrade progress is updated from the following callback.
+        // MARK: Firmware upgrade progress is updated from the following callback
+        // MARK: Feed this percent into my object (progress bar)
+        firmwareUpdateProgressView.progress = Float(percent)/100
+        print("Firwamre progress is: \(percent)%")
     }
     
     func onFirmwareUpgradeStatus(_ status: OcelotFirmwareManager.OcelotFirmwareUpgradeStatus) {
+        fwUpgradeInProgress = false
         currentDevice?.didFinishFirmwareUpgrade()
         
-        // MARK: Handle firmware upgrade success and failure callbacks here.
-        // Below contains the firmware upgrade statuses that may be called back
-        // from onFirmwareUpgradeStatus.
-        switch status {
-        case .SUCCESS:
-            debugPrint("Firmware Upgrade: Success")
-            break
-        case .DOWNLOAD_FAILED:
-            debugPrint("Firmware file download failed")
-            break
-        case .FAILED:
-            debugPrint("Firmware upgrade failure")
-            break
-        case .BOND_CANCELLED:
-            debugPrint("Bonding request was cancelled")
-            break
-        case .UNAVAILABLE:
-            debugPrint("Firmware upgrades not available on device")
-            break
+        DispatchQueue.main.async {  [weak self] in
+            print("Firmware upgrade \(status == .SUCCESS ? "successful" : "unsuccesful")")
+            self?.firmwareVersionLabel.text = self?.newFWVersion
+            let firmwareUpdateComplete: UIAlertController = UIAlertController(title: status == .SUCCESS ? "Upgrade Successful" : "Upgrade Failed", message: status == .SUCCESS ? "Sucessfully upgraded from \(self?.currFWVersion ?? "Unknown") to \(self?.newFWVersion ?? "Unknown")!" : "Upgrade failed to complete.", preferredStyle: .alert)
+            firmwareUpdateComplete.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+            self?.firmwareUpdateProgressAlert.dismiss(animated: true, completion: { () in self?.present(firmwareUpdateComplete, animated: true, completion: nil) })
         }
         
-        let alert = UIAlertController(title: "Firmware Upgrade", message: "Firmware upgrade \(status == .SUCCESS ? "was successful" : "failed")!", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Okay", style: .default, handler: nil))
-        self.present(alert, animated: true, completion: nil)
-        
+        // MARK: Below contains the firmware upgrade statuses that may be called back.
+        switch status {
+        case .SUCCESS:
+            print("Firmware Upgrade: Success")
+            break
+        case .DOWNLOAD_FAILED:
+            print("Firmware file download failed")
+            break
+        case .FAILED:
+            print("Firmware upgrade failure")
+            break
+        case .BOND_CANCELLED:
+            print("Bonding request was cancelled")
+            break
+        case .UNAVAILABLE:
+            print("Firmware upgrades not available on device")
+            break
+        }
     }
 }
 
@@ -318,10 +378,24 @@ extension DeviceViewController: OcelotFirmwareAvailableListener {
         //                  (major).(minor).(patch)
         // where X represents each digit in the Int64 value.
         
-        let ver = currentVersion == OcelotServiceConstants.INVALID_FIRMWARE_VERSION ? "unknown" : "\(String(format: "%d", ((currentVersion / 1000000) % 1000))).\(String(format: "%d", ((currentVersion / 1000) % 1000))).\(String(format: "%d", (currentVersion % 1000)) )"
-        DispatchQueue.main.async { [weak self] in
-            self?.firmwareVersionLabel.text = "firmware version: " + ver
+        if fwUpgradeInProgress && (newFirmwareInfo != nil) {
+            currentDevice?.startFirmwareUpgrade()
         }
-        currentDevice?.startFeatureUpdate()
+        
+        DispatchQueue.main.async { [weak self] in
+            if let self = self {
+                if let info = newFirmwareInfo {
+                    self.newFWVersion = "\(String(format: "%d", ((info.versionCode / 1000000) % 1000))).\(String(format: "%d", ((info.versionCode / 1000) % 1000))).\(String(format: "%d", (info.versionCode % 1000)) )"
+                    self.firmwareUpdateAvailable.message = "Version \(self.newFWVersion ?? "Unknown") is available. Do you want to update?"
+                    self.present(self.firmwareUpdateAvailable, animated: true, completion: nil)
+                }
+                else {
+                    self.present(self.firmwareUpdateNotAvailable, animated: true)
+                }
+            }
+            
+        }
+        
+        
     }
 }

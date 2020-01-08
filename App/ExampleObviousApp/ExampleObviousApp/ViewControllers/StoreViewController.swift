@@ -11,7 +11,7 @@
 import UIKit
 import ObviousAPI
 
-class StoreViewController: UIViewController {
+class StoreViewController: ObviousViewController {
 
     @IBOutlet weak var storeTableView: UITableView!
     
@@ -87,7 +87,7 @@ extension StoreViewController: UITableViewDataSource, UITableViewDelegate {
 extension StoreViewController: OcelotCatalogListResultListener {
     func onCatalogListSuccess(_ catalogList: [CatalogItem]) {
         DispatchQueue.main.async { [weak self] in
-            debugPrint("\(catalogList)")
+            print("\(catalogList)")
             self?.catalogList = catalogList
             self?.storeTableView.reloadData()
         }

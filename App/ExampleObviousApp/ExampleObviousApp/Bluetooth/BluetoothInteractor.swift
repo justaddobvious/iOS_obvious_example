@@ -33,7 +33,7 @@ extension BluetoothInteractor: CBCentralManagerDelegate {
         if central.state == CBManagerState.poweredOn {
             delegate?.didManagerPowerOn()
         } else {
-            debugPrint("Bluetooth not available.")
+            print("Bluetooth not available.")
         }
     }
     
@@ -68,7 +68,7 @@ extension BluetoothInteractor: CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         if let name = peripheral.name, name != "" {
-            debugPrint("Discovered Device \(peripheral)")
+            print("Discovered Device \(peripheral)")
             discoveredPeripherals[peripheral.identifier] = peripheral
             delegate?.didDiscoverPeripheral(info: DeviceInfo(name: name, uuid: peripheral.identifier))
         }

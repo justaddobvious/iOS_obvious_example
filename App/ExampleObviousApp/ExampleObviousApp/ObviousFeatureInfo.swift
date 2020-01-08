@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////
-// Copyright © 2019,
+// Copyright © 2020,
 // 4iiii Innovations Inc.,
 // Cochrane, Alberta, Canada.
 // All rights reserved.
@@ -16,3 +16,4 @@ public struct ObviousFeatureInfo {
     let name: String
     var status: OcelotFeatureStatus?
 }
+

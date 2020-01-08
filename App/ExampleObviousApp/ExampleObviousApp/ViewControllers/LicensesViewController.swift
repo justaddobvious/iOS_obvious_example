@@ -17,10 +17,8 @@ public struct LicensesData {
 
 class LicensesViewController: UITableViewController {
     private var licenses: [LicensesData] = [
-        LicensesData(titleText: "Alamofire", url: URL(string: "https://raw.githubusercontent.com/Alamofire/Alamofire/master/LICENSE")!),
-        LicensesData(titleText: "CryptoSwift", url: URL(string: "https://raw.githubusercontent.com/krzyzanowskim/CryptoSwift/master/LICENSE")!),
-        LicensesData(titleText: "ObviousAPI", url: URL(string: "https://obvious.xyz/")!),
-        LicensesData(titleText: "Stripe", url: URL(string: "https://raw.githubusercontent.com/stripe/stripe-ios/master/LICENSE")!)
+        LicensesData(titleText: "Font Awesome", url: URL(string: "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/master/LICENSE.txt")!),
+        LicensesData(titleText: "ObviousAPI", url: URL(string: "https://obvious.xyz/")!)
     ]
     
     private let licenseCellIdentifier: String = "licenseCell"
@@ -38,6 +36,7 @@ class LicensesViewController: UITableViewController {
         
         let license = licenses[indexPath.row]
         cell.textLabel?.text = license.titleText
+        cell.textLabel?.textColor = UIColor(named: "PrimaryDark")!
         return cell
     }
     

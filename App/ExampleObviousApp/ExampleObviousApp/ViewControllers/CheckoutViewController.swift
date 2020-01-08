@@ -11,7 +11,7 @@
 import UIKit
 import ObviousAPI
 
-class CheckoutViewController: UIViewController {
+class CheckoutViewController: ObviousViewController {
     
     @IBOutlet weak var checkoutTableView: UITableView!
     @IBOutlet weak var totalPriceLabel: UILabel!

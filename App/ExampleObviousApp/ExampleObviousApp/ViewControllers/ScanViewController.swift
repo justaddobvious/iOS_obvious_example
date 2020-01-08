@@ -12,6 +12,7 @@ import UIKit
 
 class ScanViewController: UITableViewController {
     
+    private let connectingAlert: UIAlertController = UIAlertController(title: "Connecting...", message: nil, preferredStyle: .alert)
     private var discoveredDevices: [DeviceInfo] = []
     private let scanCellIdentifier: String = "scanCell"
     
@@ -40,12 +41,20 @@ class ScanViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: scanCellIdentifier, for: indexPath)
         
         let device = discoveredDevices[indexPath.row]
+        let imageView = UIImageView(image: UIImage(named: "Chevron")!)
+        imageView.frame = CGRect(x: 0, y: 0, width: 15, height: 24)
+        imageView.tintColor = UIColor(named: "Accent")!
+        cell.accessoryView = imageView
+        let backgroundView = UIView()
+        backgroundView.backgroundColor = tableView.backgroundColor
+        cell.backgroundView = backgroundView
         cell.textLabel?.text = device.name
         cell.detailTextLabel?.text = device.uuid.uuidString
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.present(connectingAlert, animated: true)
         BluetoothInteractor.shared.connectToDevice(by: discoveredDevices[indexPath.row].uuid)
     }
     
@@ -70,7 +79,9 @@ extension ScanViewController: BluetoothInteractorDelegate {
         let newVC = storyboard.instantiateViewController(withIdentifier: "DeviceViewController") as! DeviceViewController
         newVC.currentDevice = device
         newVC.currentDevice?.setListeners(newVC, newVC, newVC, newVC)
-        self.navigationController?.pushViewController(newVC, animated: true)
+        connectingAlert.dismiss(animated: true, completion: { () in
+            self.navigationController?.pushViewController(newVC, animated: true)
+        })
     }
     
     func didDisconnectFrom(_ device: ObviousDevice) {
@@ -79,5 +90,6 @@ extension ScanViewController: BluetoothInteractorDelegate {
     
     func didFailToConnect() {
         // Connection failure events can be handled here
+        connectingAlert.dismiss(animated: true, completion: nil)
     }
 }

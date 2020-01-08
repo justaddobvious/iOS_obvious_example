@@ -23,8 +23,8 @@ class ObviousDevice: NSObject {
     private var discoveredServices: Set<String> = Set<String>()
     private var discoveredServicesCounter: Int = 0
     private var characteristicDict: [String: CBCharacteristic] = [:]
-    private var serialNumber: String?
     private var fwUpgradeInProgress: Bool = false
+    private var deviceInfoDelegate: OcelotDeviceInfoDelegate?
     private var fwAvailableListener: OcelotFirmwareAvailableListener?
     
     private(set) var peripheral: CBPeripheral!
@@ -40,7 +40,6 @@ class ObviousDevice: NSObject {
         featureManager = OcelotFeatureManager.getDemoFeatureManager()
         featureManager.setAPIKey(OCELOTPRODUCTIDENTIFIER.EXAMPLE_API_KEY)
         deviceConnector = featureManager.getDeviceConnector()
-        deviceConnector.setConnectorCallback(self)
         firmwareManager = OcelotFirmwareManager.getDemoFirmwareManager()
         firmwareManager.setAPIKey(OCELOTPRODUCTIDENTIFIER.EXAMPLE_API_KEY)
         if let serviceCharMap = deviceConnector.getServerInformation() {
@@ -58,13 +57,29 @@ class ObviousDevice: NSObject {
         fwAvailableListener = firmwareAvailableListener
     }
     
+    public func setDeviceInfoDelegate(delegate: OcelotDeviceInfoDelegate) {
+        deviceInfoDelegate = delegate
+    }
+    
+    public func getDeviceInfo(delegate: OcelotDeviceInfoDelegate) {
+        deviceConnector = firmwareManager.getDeviceConnector()
+        deviceConnector.setConnectorCallback(self)
+        firmwareManager.getDeviceInfo(delegate: delegate)
+    }
     public func startFeatureUpdate() {
         deviceConnector = featureManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
         featureManager.startFeatureUpdate()
     }
     
-    public func startFirmwareUpgrade() {
+    public func startFirmwareCheck(_ listener: OcelotFirmwareAvailableListener) {
+        deviceConnector = firmwareManager.getDeviceConnector()
+        deviceConnector.setConnectorCallback(self)
+        firmwareManager.upgradeCheck(ObviousDevice.BOILERPLATE_APP_VER, listener)
+        
+    }
+    
+    public func startFirmwareUpgrade () {
         fwUpgradeInProgress = true
         deviceConnector = firmwareManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
@@ -83,22 +98,11 @@ class ObviousDevice: NSObject {
         featureManager.checkFeatureStatus(featureid: featureId)
     }
     
-    public func getSerial() -> String? {
-        return featureManager.getSerialNumber()
-    }
-    
-    public func startFirmwareCheck(_ listener: OcelotFirmwareAvailableListener) {
-        deviceConnector = firmwareManager.getDeviceConnector()
-        deviceConnector.setConnectorCallback(self)
-        firmwareManager.upgradeCheck(ObviousDevice.BOILERPLATE_APP_VER, listener)
-    }
-    
     public func toggleFeature(id: Int) {
         deviceConnector = featureManager.getDeviceConnector()
         deviceConnector.setConnectorCallback(self)
         featureManager.toggleFeature(featureid: id)
     }
-    
     
 }
 
@@ -125,14 +129,13 @@ extension ObviousDevice: CBPeripheralDelegate {
             discoveredServicesCounter += 1
         }
         if discoveredServicesCounter == discoveredServices.count {
-            // MARK: BLE services and characteristics must first be discovered before the device connecter can receive an OcelotDeviceConnector.CONNECTION_STATE_CONNECTED event.
-            deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, OcelotDeviceConnector.CONNECTION_STATE_CONNECTED)
-            if !fwUpgradeInProgress {
-                if let listener = fwAvailableListener {
-                    startFirmwareCheck(listener)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                self?.deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, OcelotDeviceConnector.CONNECTION_STATE_CONNECTED)
+                if !(self?.fwUpgradeInProgress ?? true), let delegate = self?.deviceInfoDelegate {
+                    self?.getDeviceInfo(delegate: delegate)
                 }
+                self?.discoveredServicesCounter = 0
             }
-            discoveredServicesCounter = 0
         }
     }
     
@@ -145,7 +148,7 @@ extension ObviousDevice: CBPeripheralDelegate {
                 deviceConnector.onReadStatus(characteristic.uuid.uuidString, UInt8(err.code))
             }
         } else {
-            debugPrint("\(#function) - Error: unhandled update to char value for peripheral: \(String(describing: peripheral)) with characteristic: \(characteristic)")
+            print("\(#function) - Error: unhandled update to char value for peripheral: \(String(describing: peripheral)) with characteristic: \(characteristic)")
         }
     }
     
@@ -155,11 +158,20 @@ extension ObviousDevice: CBPeripheralDelegate {
     }
     
     func handleConnectionState(_ state: Int) {
-        state == OcelotDeviceConnector.CONNECTION_STATE_CONNECTED ? peripheral.discoverServices(Array(serviceInfo.keys)) : deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
+        if state == OcelotDeviceConnector.CONNECTION_STATE_CONNECTED {
+            peripheral.discoverServices(Array(serviceInfo.keys))
+        } else {
+            deviceConnector.onConnectionStateChange(OcelotDeviceConnector.CONNECTION_STATUS_SUCCESS, state)
+        }
+        
     }
 }
 
 extension ObviousDevice: OcelotDeviceConnectorCallback {
+    func getDeviceIdentifier() -> UUID? {
+        peripheral.identifier
+    }
+    
     func requestCharacteristicWrite(serviceId: String, characteristicId: String, rawdata: [UInt8]) -> Bool {
         guard let characteristic = characteristicDict[characteristicId] else { return false }
         peripheral.writeValue(Data(rawdata), for: characteristic, type: .withResponse)
@@ -191,3 +203,4 @@ extension ObviousDevice: OcelotDeviceConnectorCallback {
     }
     
 }
+
